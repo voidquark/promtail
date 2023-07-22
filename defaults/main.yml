@@ -1,0 +1,67 @@
+---
+# defaults file for promtail
+promtail_version: "latest"
+promtail_arch: "x86_64"
+promtail_http_listen_port: 9080
+promtail_http_listen_address: "0.0.0.0"
+promtail_expose_port: true
+promtail_positions_path: "/var/lib/promtail"
+promtail_systemd_journal_access: true
+promtail_download_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-{{ promtail_version }}.{{ promtail_arch }}.rpm"
+promtail_acl_log_file_permission:
+  - "/var/log/secure"
+  - "/var/log/messages"
+  - "/var/log/cron"
+  - "/var/log/dnf.log"
+  - "/var/log/boot.log"
+promtail_acl_log_dir_permission:
+  - "/var/log"
+
+# default variables for /etc/promtail/config.yml
+promtail_server:
+  http_listen_port: "{{ promtail_http_listen_port }}"
+  http_listen_address: "{{ promtail_http_listen_address }}"
+
+promtail_positions:
+  filename: "{{ promtail_positions_path }}/positions.yaml"
+
+promtail_clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+promtail_scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: secure
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/secure
+      - targets:
+          - localhoost
+        labels:
+          job: messages
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/messages
+      - targets:
+          - localhoost
+        labels:
+          job: cron
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/cron
+      - targets:
+          - localhoost
+        labels:
+          job: dnf
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/dnf.log
+      - targets:
+          - localhoost
+        labels:
+          job: boot
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/boot.log
+
+# not set by default
+#promtail_limits_config:
+#promtail_target_config:
