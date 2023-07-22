@@ -1,5 +1,7 @@
 # Ansible role - Promtail
 
+[![License](https://img.shields.io/github/license/voidquark/promtail)](LICENSE)
+
 The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail, agent which ships contents of local logs to private Loki. Role is tailored for systems from the Red Hat family (e.g., RHEL, RockyLinux, AlmaLinux, etc.).
 
 **🔑 Key Features**
