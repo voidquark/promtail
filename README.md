@@ -10,6 +10,8 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 - **🧩 Flexible Configuration**: Easily customize Promtail configuration to match your specific requirements.
 - **🧹 Effortless Uninstall**: Completely remove Promtail from your system with a single command, ensuring a clean uninstallation.
 
+📢 **[Check the blog post](https://voidquark.com/rootless-promtail-with-ansible/)** 📝 **Understand the rationale behind constructing this role in a specific manner.**
+
 ## Table of Content
 
 - [Requirements](#requirements)
