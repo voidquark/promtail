@@ -36,12 +36,18 @@
     state: absent
     autoremove: true
 
+- name: Get firewalld state
+  ansible.builtin.systemd:
+    name: "firewalld"
+  register: firewalld_service_state
+
 - name: Ensure that Promtail {{ promtail_http_listen_port }}/tcp port - firewalld rule is not present
   ansible.posix.firewalld:
     immediate: true
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: disabled
+  when: firewalld_service_state.status.ActiveState == "active"
 
 - name: Remove Promtail directories"
   ansible.builtin.file:

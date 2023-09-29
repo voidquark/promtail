@@ -33,7 +33,7 @@
       when: __already_deployed.stat.exists | bool
 
 - name: Install Promtail from remote URL
-  ansible.builtin.package:
+  ansible.builtin.dnf:
     name: "{{ promtail_download_url }}"
     state: present
     disable_gpg_check: true
