@@ -42,6 +42,7 @@
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: disabled
+  ignore_errors: true
 
 - name: Remove Promtail directories"
   ansible.builtin.file:
