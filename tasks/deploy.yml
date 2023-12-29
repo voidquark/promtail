@@ -75,13 +75,18 @@
     - promtail_acl_log_file_permission | length > 0
     - promtail_acl_log_dir_permission | length > 0
 
+- name: Get firewalld state
+  ansible.builtin.systemd:
+    name: "firewalld"
+  register: __firewalld_service_state
+
 - name: Enable firewalld rule to expose Promtail {{ promtail_http_listen_port }}/tcp port
   ansible.posix.firewalld:
     immediate: true
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: enabled
-  when: promtail_expose_port | bool
+  when: __firewalld_service_state.status.ActiveState == "active" and promtail_expose_port | bool
 
 - name: Ensure that Promtail {{ promtail_http_listen_port }}/tcp port - firewalld rule is not present
   ansible.posix.firewalld:
@@ -89,7 +94,7 @@
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: disabled
-  when: not promtail_expose_port | bool
+  when: __firewalld_service_state.status.ActiveState == "active" and not promtail_expose_port | bool
 
 - name: Flush handlers after deployment
   ansible.builtin.meta: flush_handlers
@@ -107,3 +112,4 @@
   retries: 5
   delay: 8
   until: promtail_verify_url_status_code.status == 200
+  when: promtail_expose_port | bool
