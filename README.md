@@ -96,25 +96,25 @@ promtail_scrape_configs:
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/secure
       - targets:
-          - localhoost
+          - localhost
         labels:
           job: messages
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/messages
       - targets:
-          - localhoost
+          - localhost
         labels:
           job: cron
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/cron
       - targets:
-          - localhoost
+          - localhost
         labels:
           job: dnf
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/dnf.log
       - targets:
-          - localhoost
+          - localhost
         labels:
           job: boot
           instance: "{{ ansible_fqdn }}"
