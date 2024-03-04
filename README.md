@@ -29,7 +29,7 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 ```yaml
 promtail_version: "latest"
 ```
-The version of Promtail to download and deploy. Supported standard version "2.8.3" format or "latest".
+The version of Promtail to download and deploy. Supported standard version "2.9.5" format or "latest".
 
 ```yaml
 promtail_arch: "x86_64"
