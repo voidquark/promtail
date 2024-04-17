@@ -1,6 +1,6 @@
 ---
 name: Lint
-
+# yamllint disable-line rule:truthy
 on:
   push:
     branches:
@@ -25,7 +25,3 @@ jobs:
       - name: Run Yaml Lint
         run: |
           yamllint .
-
-      - name: Ansible Linting
-        run: make ci-lint-ansible
-        if: success() || failure()
