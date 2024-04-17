@@ -25,3 +25,6 @@ jobs:
       - name: Run Yaml Lint
         run: |
           yamllint .
+
+      - name: Run Ansible Lint
+        uses: ansible/ansible-lint@main
