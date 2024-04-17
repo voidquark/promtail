@@ -25,6 +25,7 @@
         | map(attribute='labels')
         | map(attribute='__path__')
         | map('dirname')
+        | unique
         | list
       }}
 
