@@ -2,6 +2,7 @@
 # tasks file for promtail deploy
 
 - name: Obtain the latest version from the GitHub repo
+  when: promtail_version == "latest"
   block:
     - name: Scrape Github API endpoint to obtain latest Promtail version
       ansible.builtin.uri:
@@ -16,7 +17,6 @@
     - name: Latest available Promtail version
       ansible.builtin.set_fact:
         promtail_version: "{{ __github_latest_version.json.tag_name | regex_replace('^v?(\\d+\\.\\d+\\.\\d+)$', '\\1') }}"
-  when: promtail_version == "latest"
 
 - name: Verify current deployed version
   block:
@@ -72,15 +72,14 @@
   ansible.builtin.include_tasks:
     file: "acl_configuration.yml"
   when:
-    - promtail_acl_log_file_permission | length > 0
-    - promtail_acl_log_dir_permission | length > 0
+    - promtail_scrape_configs is defined
 
 - name: Get firewalld state
   ansible.builtin.systemd:
     name: "firewalld"
   register: __firewalld_service_state
 
-- name: Enable firewalld rule to expose Promtail {{ promtail_http_listen_port }}/tcp port
+- name: Enable firewalld rule to expose Promtail tcp port {{ promtail_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true
@@ -88,7 +87,7 @@
     state: enabled
   when: __firewalld_service_state.status.ActiveState == "active" and promtail_expose_port | bool
 
-- name: Ensure that Promtail {{ promtail_http_listen_port }}/tcp port - firewalld rule is not present
+- name: Ensure that Promtail firewalld rule is not present - tcp port {{ promtail_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true

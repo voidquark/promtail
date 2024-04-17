@@ -120,25 +120,7 @@ promtail_scrape_configs:
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/boot.log
 ```
-The `scrape_configs` block configures how Promtail can scrape logs from a series of targets using a specified discovery method. [All possible values for `scrape_configs`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#scrape_configs). By default, the configuration uses `static_configs` and includes preconfigured settings for common system logs. The `instance` label is used to identify the system based on the `ansible_fqdn` magic variable, which gathers the fully qualified domain name of the system.
-
-```yaml
-promtail_acl_log_file_permission:
-  - "/var/log/secure"
-  - "/var/log/messages"
-  - "/var/log/cron"
-  - "/var/log/dnf.log"
-  - "/var/log/boot.log"
-```
-The `promtail_acl_log_file_permission` variable allows applying ACL read permissions for the `promtail` user to the specified log files. Additionally, it creates a logrotate configuration file (`/etc/logrotate.d/promtail_acl`) to maintain the read permission for promtail after log rotation. This approach ensures that Promtail can read system logs without requiring root privileges.
-To work around logrotate limitations, a dummy empty log directory (`/var/log/dummy_promtail_acl`) is created. This avoids modifying system logrotate configurations like `/etc/logrotate.d/rsyslog`, providing a flexible way to manage ACL permissions for both system and non-system logs (e.g., nginx logs).
-
-
-```yaml
-promtail_acl_log_dir_permission:
-  - "/var/log"
-```
-The `promtail_acl_log_dir_permission` variable ensures that default and recursive read and execute permissions are applied to the specified directory and all its subdirectories. This grants the `promtail` user access to the directory and its subdirectories, without requiring root privileges. The configuration is permanent and managed in `/etc/logrotate.d/promtail_acl`. Please note that this ACL permission is only applied to directories and their subdirectories, not to individual log files.
+The `scrape_configs` block configures how Promtail can scrape logs from a series of targets using a specified discovery method. [All possible values for `scrape_configs`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#scrape_configs). By default, the configuration uses `static_configs` and includes pre-configured settings for common system logs. The `instance` label is used to identify the system based on the `ansible_fqdn` magic variable, which gathers the fully qualified domain name of the system.
 
 | Variable Name | Description
 | ----------- | ----------- |
