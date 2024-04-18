@@ -1,5 +1,15 @@
 ---
 - name: Converge
   hosts: all
+  vars:
+    promtail_scrape_configs:
+      - job_name: system
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: dnf
+              instance: "{{ ansible_fqdn }}"
+              __path__: /var/log/dnf.log
   roles:
     - role: voidquark.promtail
