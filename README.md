@@ -2,11 +2,11 @@
 
 [![License](https://img.shields.io/github/license/voidquark/promtail)](LICENSE)
 
-The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail, agent which ships contents of local logs to private Loki. Role is tailored for systems from the Red Hat family (e.g., RHEL, RockyLinux, AlmaLinux, etc.).
+The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail, agent which ships contents of local logs to private Loki.
+This role is tailored for operating systems such as **RedHat**, **Rocky Linux**, **AlmaLinux**, **Ubuntu**, and **Debian**.
 
 **🔑 Key Features**
-- **🛡️ Root-less Log Collection**: Promtail run without requiring root privileges, allowing seamless collection of system logs from locations like `/var/log/secure`, `/var/log/messages`, etc.
-- **📦 Out-of-the-box Deployment**: Get Promtail up and running quickly with default configurations that work seamlessly with Red Hat family systems. See [Quick Start](#quick-start) for easy setup.
+- **🛡️ Root-less Log Collection**: Promtail run without requiring root privileges, allowing seamless collection of system logs from locations like `/var/log/messages`, `/var/log/syslog`, etc.
 - **🧩 Flexible Configuration**: Easily customize Promtail configuration to match your specific requirements.
 - **🧹 Effortless Uninstall**: Completely remove Promtail from your system with a single command, ensuring a clean uninstallation.
 
@@ -17,12 +17,10 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 - [Requirements](#requirements)
 - [Role Variables](#role-variables)
 - [Playbook](#playbook)
-- [Quick Start](#quick-start)
 
 ## Requirements
 
-- Ansible 2.9+
-- `RHEL`/`RockyLinux`/`AlmaLinux` 8+ or compatible distributions
+- Ansible 2.10+
 
 ## Role Variables
 
@@ -30,11 +28,6 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 promtail_version: "latest"
 ```
 The version of Promtail to download and deploy. Supported standard version "3.0.0" format or "latest".
-
-```yaml
-promtail_arch: "x86_64"
-```
-The architecture for `RPM` package for which Promtail is being deployed. Possible values `x86_64`, `aarch64`, `arm`.
 
 ```yaml
 promtail_http_listen_port: 9080
@@ -47,9 +40,9 @@ promtail_http_listen_address: "0.0.0.0"
 The address on which Promtail listens for HTTP requests. By default, it listens on all interfaces.
 
 ```yaml
-promtail_expose_port: true
+promtail_expose_port: false
 ```
-Set to `true` by default, controls whether to add a firewalld rule for exposing the Promtail port. When `true`, a firewalld rule is added to allow inbound traffic on the specified Promtail port. Set to `false` to ensure that firewalld rule is not present. Enabling this option allows you to collect Promtail `/metrics`, which are essential for Prometheus monitoring.
+By default, this is set to `false`. It supports only simple `firewalld` configurations. If set to `true`, a firewalld rule is added to expose the TCP `promtail_http_listen_port`. If set to `false`, the system ensures that the rule is not present. If the `firewalld.service` is not active, all firewalld tasks are skipped.
 
 ```yaml
 promtail_positions_path: "/var/lib/promtail"
@@ -57,14 +50,20 @@ promtail_positions_path: "/var/lib/promtail"
 Promtail path for position file. File indicating how far it has read into a file. It is needed for when Promtail is restarted to allow it to continue from where it left off.
 
 ```yaml
-promtail_systemd_journal_access: true
+promtail_user_append_groups:
+  - "systemd-journal"
 ```
-Enables adding the `promtail` user to the `systemd-journal` group, granting permission to read system journal logs. Required for configuring `promtail_scrape_config` for journal log scraping.
+Appends the promtail user to specific groups. By default, it appends the user to the `systemd-journal` group, granting permission to read system journal logs.
 
 ```yaml
-promtail_download_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-{{ promtail_version }}.{{ promtail_arch }}.rpm"
+promtail_download_url_rpm: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-{{ promtail_version }}.{{ __promtail_arch }}.rpm"
 ```
 The default download URL for the Promtail rpm package from GitHub.
+
+```yaml
+promtail_download_url_deb: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail_{{ promtail_version }}_{{ __promtail_arch }}.deb"
+```
+The default download URL for the Promtail deb package from GitHub.
 
 ```yaml
 promtail_server:
@@ -83,7 +82,7 @@ The `positions` block configures where Promtail will save a file indicating how 
 promtail_clients:
   - url: http://localhost:3100/loki/api/v1/push
 ```
-The `clients` block configures how Promtail connects to instances of Loki. [All possible values for `clients`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#clients). ⚠️ Please remember to update the url field to match your Loki instance's address. Failure to do so will result in Promtail being unable to send logs to the correct destination.
+The `clients` block configures how Promtail connects to instances of Loki. [All possible values for `clients`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#clients). ⚠️ This configuration is mandatory. By default, it's empty, and the example above serves as a simple illustration for inspiration.
 
 ```yaml
 promtail_scrape_configs:
@@ -101,26 +100,8 @@ promtail_scrape_configs:
           job: messages
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/messages
-      - targets:
-          - localhost
-        labels:
-          job: cron
-          instance: "{{ ansible_fqdn }}"
-          __path__: /var/log/cron
-      - targets:
-          - localhost
-        labels:
-          job: dnf
-          instance: "{{ ansible_fqdn }}"
-          __path__: /var/log/dnf.log
-      - targets:
-          - localhost
-        labels:
-          job: boot
-          instance: "{{ ansible_fqdn }}"
-          __path__: /var/log/boot.log
 ```
-The `scrape_configs` block configures how Promtail can scrape logs from a series of targets using a specified discovery method. [All possible values for `scrape_configs`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#scrape_configs). By default, the configuration uses `static_configs` and includes pre-configured settings for common system logs. The `instance` label is used to identify the system based on the `ansible_fqdn` magic variable, which gathers the fully qualified domain name of the system.
+The `scrape_configs` block configures how Promtail can scrape logs from a series of targets using a specified discovery method. [All possible values for `scrape_configs`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#scrape_configs). ⚠️ This configuration is mandatory. By default, it's empty, and the example above serves as a simple illustration for inspiration.
 
 | Variable Name | Description
 | ----------- | ----------- |
@@ -133,65 +114,39 @@ No Dependencies
 
 ## Playbook
 
-- playbook by default requires the `ansible_fqdn` magic variable, reducing the need to collect all facts. This improves performance and ensures efficient execution of the playbook.
 ```yaml
 - name: Manage promtail service
-  hosts: promtail
-  gather_subset:
-    - "network"
-    - "!all"
-    - "!min"
+  hosts: all
   become: true
+  vars:
+    promtail_clients:
+      - url: http://localhost:3100/loki/api/v1/push
+    promtail_scrape_configs:
+      - job_name: system
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: secure
+              instance: "{{ ansible_fqdn }}"
+              __path__: /var/log/secure
+          - targets:
+              - localhost
+            labels:
+              job: messages
+              instance: "{{ ansible_fqdn }}"
+              __path__: /var/log/messages
   roles:
     - role: voidquark.promtail
 ```
 
-## Quick Start
+- Playbook execution example
+```shell
+# Deploy Promtail
+ansible-playbook function_promtail_play.yml
 
-To quickly deploy Promtail using this Ansible role, follow these steps:
-
-**1. Set up your project directory structure:**
-```shell
-ansible_structure
-├── playbook
-│   └── function_promtail_play.yml # Playbook
-└── inventory
-    ├── group_vars
-    │   └── promtail
-    │       └── promtail_vars.yml # Overwrite variables in group_vars (optional)
-    ├── hosts
-    └── host_vars
-        └── promtail-demo.voidquark.com
-            └── host_vars.yml # Overwrite variables in host_vars (optional)
-```
-**2. Install the Ansible Promtail Role from Ansible Galaxy:**
-```shell
-ansible-galaxy install voidquark.promtail
-```
-**3. Create your inventory - `inventory/hosts`**
-```shell
-[promtail]
-promtail-demo.voidquark.com
-```
-**4. Create your playbook - `playbook/function_promtail_play.yml`**
-```yaml
-- name: Manage promtail service
-  hosts: promtail
-  gather_subset:
-    - "network"
-    - "!all"
-    - "!min"
-  become: true
-  roles:
-    - role: voidquark.promtail
-```
-**5. Execute the playbook**
-```shell
-# Deployment
-ansible-playbook -i inventory/hosts playbook/function_promtail_play.yml
-
-# Uninstall
-ansible-playbook -i inventory/hosts playbook/function_promtail_play.yml -t promtail_uninstall
+# Uninstall Promtail
+ansible-playbook function_promtail_play.yml -t promtail_uninstall
 ```
 
 ## License

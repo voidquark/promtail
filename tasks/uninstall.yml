@@ -33,13 +33,24 @@
         | list
       }}
 
-- name: Remove ACL Permission for log dir
+- name: Remove ACL Permission for log dirs - default
   ansible.posix.acl:  # noqa ignore-errors
     path: "{{ log_dir }}"
     recursive: true
     entity: promtail
     etype: user
     default: true
+    state: absent
+  loop: "{{ __promtail_acl_log_dirs }}"
+  loop_control:
+    loop_var: log_dir
+  ignore_errors: true
+
+- name: Remove ACL permission for log dirs
+  ansible.posix.acl:  # noqa ignore-errors
+    path: "{{ log_dir }}"
+    entity: promtail
+    etype: user
     state: absent
   loop: "{{ __promtail_acl_log_dirs }}"
   loop_control:
@@ -62,6 +73,13 @@
     name: "promtail"
     state: absent
     autoremove: true
+  when: ansible_os_family in ['RedHat', 'Rocky']
+
+- name: Uninstall Promtail deb package
+  ansible.builtin.apt:
+    name: "promtail"
+    state: absent
+  when: ansible_os_family == 'Debian'
 
 - name: Ensure that Promtail firewalld rule is not present - tcp port {{ promtail_http_listen_port }}
   ansible.posix.firewalld:  # noqa ignore-errors

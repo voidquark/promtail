@@ -32,20 +32,22 @@
       register: __current_deployed_version
       when: __already_deployed.stat.exists | bool
 
-- name: Install Promtail from remote URL
-  ansible.builtin.dnf:
-    name: "{{ promtail_download_url }}"
-    state: present
-    disable_gpg_check: true
-  notify: restart promtail
-  when: __current_deployed_version.stdout is not defined or promtail_version not in __current_deployed_version.stdout
+- name: Include RedHat/Rocky setup
+  ansible.builtin.include_tasks:
+    file: setup-RedHat.yml
+  when: ansible_os_family in ['RedHat', 'Rocky']
+
+- name: Include Debian/Ubuntu setup
+  ansible.builtin.include_tasks:
+    file: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
 
 - name: Ensure that Promtail position path exists
   ansible.builtin.file:
     path: "{{ promtail_positions_path }}"
     state: directory
     owner: "promtail"
-    group: "promtail"
+    group: "root"
     mode: "0750"
 
 - name: Template Promtail config - /etc/promtail/config.yml
@@ -53,26 +55,29 @@
     src: "config.yml.j2"
     dest: "/etc/promtail/config.yml"
     owner: "promtail"
-    group: "promtail"
+    group: "root"
     mode: "0644"
     validate: "/usr/bin/promtail -check-syntax -config.file %s"
   notify: restart promtail
 
-- name: Add the Promtail system user to systemd-journal group
+- name: Add the Promtail system user to additional group
   ansible.builtin.user:
     name: "promtail"
-    groups: "systemd-journal"
+    groups: "{{ group_name }}"
     system: true
     append: true
     create_home: false
     state: present
-  when: promtail_systemd_journal_access | bool
+  loop: "{{ promtail_user_append_groups }}"
+  loop_control:
+    loop_var: group_name
+  when: promtail_user_append_groups | length > 0
 
 - name: Include Promtail ACL permission configuration
   ansible.builtin.include_tasks:
     file: "acl_configuration.yml"
   when:
-    - promtail_scrape_configs is defined
+    - promtail_scrape_configs | length > 0
 
 - name: Get firewalld state
   ansible.builtin.systemd:
@@ -85,7 +90,9 @@
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: enabled
-  when: __firewalld_service_state.status.ActiveState == "active" and promtail_expose_port | bool
+  when:
+    - __firewalld_service_state.status.ActiveState == "active"
+    - promtail_expose_port | bool
 
 - name: Ensure that Promtail firewalld rule is not present - tcp port {{ promtail_http_listen_port }}
   ansible.posix.firewalld:
@@ -93,7 +100,9 @@
     permanent: true
     port: "{{ promtail_http_listen_port }}/tcp"
     state: disabled
-  when: __firewalld_service_state.status.ActiveState == "active" and not promtail_expose_port | bool
+  when:
+    - __firewalld_service_state.status.ActiveState == "active"
+    - not promtail_expose_port | bool
 
 - name: Flush handlers after deployment
   ansible.builtin.meta: flush_handlers

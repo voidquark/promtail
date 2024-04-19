@@ -88,13 +88,13 @@
         path: "/var/log/dummy_promtail_acl"
         state: directory
         owner: "promtail"
-        group: "promtail"
+        group: "root"
         mode: "0750"
 
     - name: Create dummy empty log file for logrotate ACL configuration to work
       ansible.builtin.copy:
         content: ""
         dest: "/var/log/dummy_promtail_acl/dummy_promtail_acl.log"
-        owner: promtail
-        group: promtail
+        owner: "promtail"
+        group: "root"
         mode: 0600
