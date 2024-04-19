@@ -5,11 +5,26 @@ galaxy_info:
   description: Manage Grafana Promtail Application
   company: VoidQuark
   license: MIT
-  min_ansible_version: "2.9"
+  min_ansible_version: "2.10"
   platforms:
     - name: EL
       versions:
-        - "8"
         - "9"
+        - "8"
+    - name: Fedora
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - promtail
+    - grafana
+    - logging
+    - grafana
+    - monitoring
 
 dependencies: []
