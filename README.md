@@ -6,9 +6,8 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 This role is tailored for operating systems such as **RedHat**, **Rocky Linux**, **AlmaLinux**, **Ubuntu**, and **Debian**.
 
 **🔑 Key Features**
-- **🛡️ Root-less Log Collection**: Promtail run without requiring root privileges, allowing seamless collection of system logs from locations like `/var/log/messages`, `/var/log/syslog`, etc.
-- **🧩 Flexible Configuration**: Easily customize Promtail configuration to match your specific requirements.
-- **🧹 Effortless Uninstall**: Completely remove Promtail from your system with a single command, ensuring a clean uninstallation.
+- **🛡️ Root-less Log Collection**: Promtail operates without requiring root privileges. ACL (Access Control List) ensures that Promtail can access logs securely without needing root permissions.
+- **🧹 Effortless Uninstall**: Easily remove Promtail from your system using the "promtail_uninstall" tag.
 
 📢 **[Check the blog post](https://voidquark.com/blog/rootless-promtail-with-ansible/)** 📝 **Understand the rationale behind constructing this role in a specific manner.**
 
