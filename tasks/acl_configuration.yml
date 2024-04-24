@@ -29,46 +29,51 @@
         | list
       }}
 
+- name: Stat log dirs
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ __promtail_acl_log_dirs }}"
+  register: __promtail_stat_acl_log_dirs
+
 - name: Set recursive default ACL permission for log dirs
   ansible.posix.acl:
-    path: "{{ log_dir }}"
+    path: "{{ item.item }}"
     recursive: true
     entity: promtail
     etype: user
     permissions: rx
     default: true
     state: present
-  loop: "{{ __promtail_acl_log_dirs }}"
-  loop_control:
-    loop_var: log_dir
+  loop: "{{ __promtail_stat_acl_log_dirs.results }}"
   when:
-    - __promtail_acl_log_dirs | length > 0
+    - __promtail_stat_acl_log_dirs | length > 0
+    - item.stat.exists
+  notify: restart promtail
 
 - name: Set ACL permission for log dirs
   ansible.posix.acl:
-    path: "{{ log_dir }}"
+    path: "{{ item.item }}"
     entity: promtail
     etype: user
     permissions: rx
     state: present
-  loop: "{{ __promtail_acl_log_dirs }}"
-  loop_control:
-    loop_var: log_dir
+  loop: "{{ __promtail_stat_acl_log_dirs.results }}"
   when:
-    - __promtail_acl_log_dirs | length > 0
+    - __promtail_stat_acl_log_dirs | length > 0
+    - item.stat.exists
+  notify: restart promtail
 
 - name: Set ACL permission for existing log files
   ansible.posix.acl:
-    path: "{{ log_files }}"
+    path: "{{ item }}"
     entity: promtail
     etype: user
     permissions: r
     state: present
-  loop: "{{ __promtail_acl_log_files }}"
-  loop_control:
-    loop_var: log_files
+  with_fileglob: "{{ __promtail_acl_log_files }}"
   when:
     - __promtail_acl_log_files | length > 0
+  notify: restart promtail
 
 - name: Promtail ACL Logrotate
   when:
