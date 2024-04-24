@@ -49,6 +49,7 @@
     owner: "promtail"
     group: "root"
     mode: "0750"
+  notify: restart promtail
 
 - name: Template Promtail config - /etc/promtail/config.yml
   ansible.builtin.template:
@@ -58,6 +59,15 @@
     group: "root"
     mode: "0644"
     validate: "/usr/bin/promtail -check-syntax -config.file %s"
+  notify: restart promtail
+
+- name: Template Promtail systemd - /etc/systemd/system/promtail.service
+  ansible.builtin.template:
+    src: "promtail.service.j2"
+    dest: "/etc/systemd/system/promtail.service"
+    owner: "root"
+    group: "root"
+    mode: "0644"
   notify: restart promtail
 
 - name: Add the Promtail system user to additional group
@@ -71,13 +81,16 @@
   loop: "{{ promtail_user_append_groups }}"
   loop_control:
     loop_var: group_name
-  when: promtail_user_append_groups | length > 0
+  when:
+    - promtail_user_append_groups | length > 0
+    - promtail_runtime_mode == "acl"
 
 - name: Include Promtail ACL permission configuration
   ansible.builtin.include_tasks:
     file: "acl_configuration.yml"
   when:
     - promtail_scrape_configs | length > 0
+    - promtail_runtime_mode == "acl"
 
 - name: Get firewalld state
   ansible.builtin.systemd:
@@ -94,16 +107,6 @@
     - __firewalld_service_state.status.ActiveState == "active"
     - promtail_expose_port | bool
 
-- name: Ensure that Promtail firewalld rule is not present - tcp port {{ promtail_http_listen_port }}
-  ansible.posix.firewalld:
-    immediate: true
-    permanent: true
-    port: "{{ promtail_http_listen_port }}/tcp"
-    state: disabled
-  when:
-    - __firewalld_service_state.status.ActiveState == "active"
-    - not promtail_expose_port | bool
-
 - name: Flush handlers after deployment
   ansible.builtin.meta: flush_handlers
 
@@ -111,6 +114,21 @@
   ansible.builtin.systemd:
     name: promtail.service
     state: started
+
+- name: Stat position file
+  ansible.builtin.stat:
+    path: "{{ promtail_positions_path }}/positions.yaml"
+  register: __promtail_stat_position_file
+
+- name: Ensure correct owner and group for Promtail position file
+  ansible.builtin.file:
+    path: "{{ promtail_positions_path }}/positions.yaml"
+    state: file
+    owner: "promtail"
+  notify: restart promtail
+  when:
+    - __promtail_stat_position_file.stat.exists
+    - promtail_runtime_mode == "acl"
 
 - name: Verify that Promtail URL is responding
   ansible.builtin.uri:
