@@ -32,33 +32,15 @@ promtail_scrape_configs: []
 #       - targets:
 #           - localhost
 #         labels:
-#           job: secure
-#           instance: "{{ ansible_fqdn }}"
-#           __path__: /var/log/secure
-#       - targets:
-#           - localhost
-#         labels:
 #           job: messages
 #           instance: "{{ ansible_fqdn }}"
 #           __path__: /var/log/messages
 #       - targets:
 #           - localhost
 #         labels:
-#           job: cron
+#           job: nginx
 #           instance: "{{ ansible_fqdn }}"
-#           __path__: /var/log/cron
-#       - targets:
-#           - localhost
-#         labels:
-#           job: dnf
-#           instance: "{{ ansible_fqdn }}"
-#           __path__: /var/log/dnf.log
-#       - targets:
-#           - localhost
-#         labels:
-#           job: boot
-#           instance: "{{ ansible_fqdn }}"
-#           __path__: /var/log/boot.log
+#           __path__: /var/log/nginx/*.log
 
 # not set by default
 # promtail_limits_config:
