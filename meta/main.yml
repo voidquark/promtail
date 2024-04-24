@@ -24,7 +24,6 @@ galaxy_info:
     - promtail
     - grafana
     - logging
-    - grafana
     - monitoring
 
 dependencies: []
