@@ -10,6 +10,6 @@
             labels:
               job: test
               instance: "{{ ansible_fqdn }}"
-              __path__: /var/log/lastlog
+              __path__: /var/log/*log
   roles:
     - role: voidquark.promtail
