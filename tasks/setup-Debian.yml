@@ -4,6 +4,7 @@
     name: "acl"
     state: present
     update_cache: yes
+  when: promtail_runtime_mode == "acl"
 
 - name: APT - Install Promtail
   ansible.builtin.apt:
