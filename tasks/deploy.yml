@@ -73,14 +73,12 @@
 - name: Add the Promtail system user to additional group
   ansible.builtin.user:
     name: "promtail"
-    groups: "{{ group_name }}"
+    groups: "{{ item }}"
     system: true
     append: true
     create_home: false
     state: present
   loop: "{{ promtail_user_append_groups }}"
-  loop_control:
-    loop_var: group_name
   when:
     - promtail_user_append_groups | length > 0
     - promtail_runtime_mode == "acl"
