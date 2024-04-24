@@ -6,10 +6,10 @@ The Ansible Promtail Role allows you to effortlessly deploy and manage Promtail,
 This role is tailored for operating systems such as **RedHat**, **Rocky Linux**, **AlmaLinux**, **Ubuntu**, and **Debian**.
 
 **🔑 Key Features**
-- **🛡️ Root-less Log Collection**: Promtail operates without requiring root privileges. ACL (Access Control List) ensures that Promtail can access logs securely without needing root permissions.
+- **⚡ Root-less/Root runtime**: By default, Promtail operates in root-less mode, utilizing ACL (Access Control List) to securely access logs without requiring root permissions. You have the option to configure root mode if necessary.
 - **🧹 Effortless Uninstall**: Easily remove Promtail from your system using the "promtail_uninstall" tag.
 
-📢 **[Check the blog post](https://voidquark.com/blog/rootless-promtail-with-ansible/)** 📝 **Understand the rationale behind constructing this role in a specific manner.**
+📢 **[Check the blog post](https://voidquark.com/blog/rootless-promtail-with-ansible/)** 📝 **Learn more about root-less mode.**
 
 ## Table of Content
 
@@ -41,7 +41,7 @@ The address on which Promtail listens for HTTP requests. By default, it listens 
 ```yaml
 promtail_expose_port: false
 ```
-By default, this is set to `false`. It supports only simple `firewalld` configurations. If set to `true`, a firewalld rule is added to expose the TCP `promtail_http_listen_port`. If set to `false`, the system ensures that the rule is not present. If the `firewalld.service` is not active, all firewalld tasks are skipped.
+By default, this is set to `false`. It supports only simple `firewalld` configurations. If set to `true`, a firewalld rule is added to expose the TCP `promtail_http_listen_port`. If set to `false`, configuration is skipped. If the `firewalld.service` is not active, all firewalld tasks are skipped.
 
 ```yaml
 promtail_positions_path: "/var/lib/promtail"
@@ -49,10 +49,17 @@ promtail_positions_path: "/var/lib/promtail"
 Promtail path for position file. File indicating how far it has read into a file. It is needed for when Promtail is restarted to allow it to continue from where it left off.
 
 ```yaml
+promtail_runtime_mode: "acl"
+```
+By default, Promtail runs in root-less mode. It supports two modes:
+- `acl`: Root-less mode, utilizing ACL permission model to read target log files.
+- `root`: Root mode, where Promtail runs as root and ACL configuration is skipped.
+
+```yaml
 promtail_user_append_groups:
   - "systemd-journal"
 ```
-Appends the promtail user to specific groups. By default, it appends the user to the `systemd-journal` group, granting permission to read system journal logs.
+Appends the promtail user to specific groups in root-less mode. By default, it appends the user to the `systemd-journal` group, granting permission to read system journal logs.
 
 ```yaml
 promtail_download_url_rpm: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-{{ promtail_version }}.{{ __promtail_arch }}.rpm"
@@ -99,6 +106,12 @@ promtail_scrape_configs:
           job: messages
           instance: "{{ ansible_fqdn }}"
           __path__: /var/log/messages
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          instance: "{{ ansible_fqdn }}"
+          __path__: /var/log/nginx/*.log
 ```
 The `scrape_configs` block configures how Promtail can scrape logs from a series of targets using a specified discovery method. [All possible values for `scrape_configs`](https://grafana.com/docs/loki/latest/clients/promtail/configuration/#scrape_configs). ⚠️ This configuration is mandatory. By default, it's empty, and the example above serves as a simple illustration for inspiration.
 
@@ -126,15 +139,15 @@ No Dependencies
           - targets:
               - localhost
             labels:
-              job: secure
-              instance: "{{ ansible_fqdn }}"
-              __path__: /var/log/secure
-          - targets:
-              - localhost
-            labels:
               job: messages
               instance: "{{ ansible_fqdn }}"
               __path__: /var/log/messages
+          - targets:
+              - localhost
+            labels:
+              job: nginx
+              instance: "{{ ansible_fqdn }}"
+              __path__: /var/log/nginx/*.log
   roles:
     - role: voidquark.promtail
 ```
