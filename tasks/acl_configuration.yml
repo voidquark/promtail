@@ -63,6 +63,17 @@
     - item.stat.exists
   notify: restart promtail
 
+- name: Find all existing ACL log files
+  ansible.builtin.find:
+    paths: "{{ item | dirname }}"
+    patterns: "{{ item | basename }}"
+  loop: "{{ __promtail_acl_log_files }}"
+  register: __promtail_find_files
+
+- name: Define existing ACL log files
+  ansible.builtin.set_fact:
+    __promtail_existing_acl_log_files: "{{ __promtail_find_files.results | map(attribute='files') | flatten | map(attribute='path') }}"
+
 - name: Set ACL permission for existing log files
   ansible.posix.acl:
     path: "{{ item }}"
@@ -70,9 +81,9 @@
     etype: user
     permissions: r
     state: present
-  with_fileglob: "{{ __promtail_acl_log_files }}"
+  loop: "{{ __promtail_existing_acl_log_files }}"
   when:
-    - __promtail_acl_log_files | length > 0
+    - __promtail_existing_acl_log_files | length > 0
   notify: restart promtail
 
 - name: Promtail ACL Logrotate
